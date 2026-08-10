@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waven</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4f2ec; --ink:#211f1b; --muted:#8b867a; --hair:#ddd9cf; --card:#fbfaf6;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(circle, #d9d5c9 1.1px, transparent 1.1px);
+    background-size:34px 34px;
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:13px;
+  }
+  header{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:26px 38px 20px; border-bottom:1px solid var(--hair);
+    background:linear-gradient(var(--paper), var(--paper));
+  }
+  .mast{
+    font-family:'Cormorant Garamond',serif; font-weight:500;
+    font-size:27px; letter-spacing:.42em; text-transform:uppercase;
+  }
+  .mast span{ letter-spacing:0; }
+  .sub{ color:var(--muted); font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  main{
+    display:grid; grid-template-columns:1fr 316px; gap:0;
+    max-width:1180px; margin:0 auto; min-height:calc(100% - 78px);
+  }
+  .stage{
+    display:flex; align-items:center; justify-content:center; padding:44px 30px;
+  }
+  .frame{
+    background:#fff; padding:14px; box-shadow:0 22px 55px -18px rgba(38,34,26,.38), 0 4px 14px rgba(38,34,26,.12);
+  }
+  canvas#art{
+    display:block; width:min(58vh, 62vw, 470px); aspect-ratio:5/7;
+    cursor:grab; touch-action:none;
+  }
+  canvas#art.sculpting{ cursor:grabbing; }
+  aside{
+    border-left:1px solid var(--hair); padding:34px 30px 40px;
+    display:flex; flex-direction:column; gap:26px;
+    background:rgba(251,250,246,.55);
+  }
+  .group h2{
+    font-family:'Cormorant Garamond',serif; font-weight:500; font-style:italic;
+    font-size:17px; margin-bottom:4px;
+  }
+  .group .note{ color:var(--muted); font-size:11.5px; line-height:1.5; margin-bottom:14px; }
+  .row{ display:grid; grid-template-columns:88px 1fr 48px; align-items:center; gap:10px; margin-bottom:11px; }
+  .row label{ color:#4c4840; font-size:12px; }
+  .row .num{
+    font-family:inherit; font-variant-numeric:tabular-nums; font-size:12px;
+    color:#4c4840; text-align:right; width:44px; padding:3px 2px;
+    border:1px solid transparent; border-radius:2px; background:transparent;
+    -moz-appearance:textfield; appearance:textfield;
+  }
+  .row .num::-webkit-outer-spin-button, .row .num::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .row .num:hover{ border-color:var(--hair); background:var(--card); }
+  .row .num:focus{ outline:none; border-color:var(--ink); background:#fff; color:var(--ink); }
+  footer{
+    border-top:1px solid var(--hair); padding:18px 38px 24px;
+    display:flex; justify-content:center; align-items:baseline; gap:10px;
+  }
+  footer .name{ font-family:'Cormorant Garamond',serif; font-style:italic; font-size:15px; color:#4c4840; }
+  footer .handle{
+    font-size:11.5px; letter-spacing:.14em; color:var(--muted);
+    text-decoration:none; border-bottom:1px solid transparent; padding-bottom:1px;
+  }
+  footer a.handle:hover{ color:var(--ink); border-bottom-color:var(--ink); }
+  footer a.handle:focus-visible{ outline:2px solid #2e8c8a; outline-offset:3px; border-radius:1px; }
+  footer .dot{ color:var(--muted); font-size:12px; }
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track{ height:2px; background:#c9c4b6; border-radius:1px; }
+  input[type=range]::-moz-range-track{ height:2px; background:#c9c4b6; border-radius:1px; }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:14px; height:14px; border-radius:50%;
+    background:var(--ink); margin-top:-6px; border:2.5px solid var(--paper);
+    box-shadow:0 0 0 1px #b9b4a5;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:9px; height:9px; border-radius:50%; background:var(--ink);
+    border:2.5px solid var(--paper); box-shadow:0 0 0 1px #b9b4a5;
+  }
+  input[type=range]:focus-visible{ outline:2px solid #2e8c8a; outline-offset:4px; border-radius:2px; }
+  .swatches{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .swatch{
+    border:1px solid var(--hair); background:var(--card); border-radius:3px;
+    padding:8px 10px; display:flex; align-items:center; gap:9px;
+    font-size:12px; color:#4c4840; cursor:pointer; font-family:inherit;
+  }
+  .swatch:hover{ border-color:#b9b4a5; }
+  .swatch[aria-pressed="true"]{ border-color:var(--ink); box-shadow:0 0 0 1px var(--ink); }
+  .swatch:focus-visible{ outline:2px solid #2e8c8a; outline-offset:2px; }
+  .chip{ width:34px; height:14px; border-radius:2px; flex:none; }
+  .actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:2px; }
+  .btn{
+    font-family:inherit; font-size:12px; letter-spacing:.06em;
+    border:1px solid var(--ink); background:transparent; color:var(--ink);
+    padding:9px 14px; border-radius:2px; cursor:pointer;
+  }
+  .btn:hover{ background:var(--ink); color:var(--paper); }
+  .btn:focus-visible{ outline:2px solid #2e8c8a; outline-offset:2px; }
+  .btn.quiet{ border-color:#b9b4a5; color:#5c574c; }
+  .btn.quiet:hover{ background:#e7e4da; color:var(--ink); }
+  .hint{ color:var(--muted); font-size:11.5px; line-height:1.6; border-top:1px solid var(--hair); padding-top:16px; }
+  @media (max-width:840px){
+    main{ grid-template-columns:1fr; }
+    aside{ border-left:none; border-top:1px solid var(--hair); }
+    canvas#art{ width:min(74vw, 58vh); }
+    header{ padding:20px 22px 16px; }
+    .mast{ font-size:21px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1 class="mast">Waven<span>&nbsp;</span></h1>
+  <p class="sub">Canvas on edge &middot; 5 : 7</p>
+</header>
+<main>
+  <section class="stage" aria-label="Artwork canvas">
+    <div class="frame"><canvas id="art" width="1000" height="1400" aria-label="Generated wave composition. Drag on the canvas to sculpt the waves."></canvas></div>
+  </section>
+  <aside aria-label="Controls">
+    <div class="group">
+      <h2>Composition</h2>
+      <p class="note">How many strips of canvas stand on edge, and how heavy each thread reads.</p>
+      <div class="row"><label for="lines">Lines</label><input type="range" id="lines" min="24" max="220" step="1" value="110"><input type="number" class="num" id="n-lines" min="24" max="220" step="1" value="110" aria-label="lines value"></div>
+      <div class="row"><label for="weight">Thread weight</label><input type="range" id="weight" min="1" max="7" step="0.5" value="2.5"><input type="number" class="num" id="n-weight" min="1" max="7" step="0.5" value="2.5" aria-label="weight value"></div>
+      <div class="row"><label for="accents">Accent threads</label><input type="range" id="accents" min="0" max="30" step="1" value="9"><input type="number" class="num" id="n-accents" min="0" max="30" step="1" value="9" aria-label="accents value"></div>
+    </div>
+    <div class="group">
+      <h2>Wave</h2>
+      <p class="note">Shape the swell, then drag directly on the artwork to sculpt it by hand.</p>
+      <div class="row"><label for="swell">Swell</label><input type="range" id="swell" min="0" max="100" step="1" value="58"><input type="number" class="num" id="n-swell" min="0" max="100" step="1" value="58" aria-label="swell value"></div>
+      <div class="row"><label for="wavelen">Wavelength</label><input type="range" id="wavelen" min="15" max="100" step="1" value="52"><input type="number" class="num" id="n-wavelen" min="15" max="100" step="1" value="52" aria-label="wavelen value"></div>
+      <div class="row"><label for="bands">Crest bands</label><input type="range" id="bands" min="1" max="9" step="1" value="4"><input type="number" class="num" id="n-bands" min="1" max="9" step="1" value="4" aria-label="bands value"></div>
+      <div class="row"><label for="turb">Turbulence</label><input type="range" id="turb" min="0" max="100" step="1" value="34"><input type="number" class="num" id="n-turb" min="0" max="100" step="1" value="34" aria-label="turb value"></div>
+      <div class="row"><label for="drift">Drift</label><input type="range" id="drift" min="0" max="100" step="1" value="45"><input type="number" class="num" id="n-drift" min="0" max="100" step="1" value="45" aria-label="drift value"></div>
+    </div>
+    <div class="group">
+      <h2>Color</h2>
+      <div class="swatches" role="group" aria-label="Palette">
+        <button class="swatch" data-pal="sea" aria-pressed="true"><span class="chip" style="background:linear-gradient(90deg,#c8d46a,#5fa76b,#2e8c8a,#2d5fa8,#232c6e)"></span>Sea level</button>
+        <button class="swatch" data-pal="magic" aria-pressed="false"><span class="chip" style="background:linear-gradient(90deg,#f2d38a,#e59a5b,#c65f6a,#7a4a8c,#2f2d5c)"></span>Magic hour</button>
+        <button class="swatch" data-pal="kelp" aria-pressed="false"><span class="chip" style="background:linear-gradient(90deg,#e8e3c0,#a9b56a,#5c8a52,#2f5e46,#15332c)"></span>Kelp forest</button>
+        <button class="swatch" data-pal="bone" aria-pressed="false"><span class="chip" style="background:linear-gradient(90deg,#f5f1e6,#d8d2c2,#a8a193,#6b665c,#26231e)"></span>Bone</button>
+      </div>
+    </div>
+    <div class="group">
+      <div class="actions">
+        <button class="btn quiet" id="shuffle">Reseed</button>
+        <button class="btn quiet" id="smooth">Smooth sculpt</button>
+        <button class="btn" id="save">Export PNG</button>
+      </div>
+    </div>
+    <div class="group">
+      <h2>Fabricate</h2>
+      <p class="note">Physical size 5 &times; 7 in (127 &times; 177.8 mm), printed flat, no supports. All values in mm.</p>
+      <div class="row"><label for="ribh">Rib height</label><input type="range" id="ribh" min="5" max="60" step="0.5" value="25.4"><input type="number" class="num" id="n-ribh" min="5" max="60" step="0.5" value="25.4" aria-label="rib height mm"></div>
+      <div class="row"><label for="baseh">Base plate</label><input type="range" id="baseh" min="1" max="10" step="0.5" value="3"><input type="number" class="num" id="n-baseh" min="1" max="10" step="0.5" value="3" aria-label="base plate mm"></div>
+      <div class="row"><label for="ribt">Rib thickness</label><input type="range" id="ribt" min="0.8" max="3.2" step="0.1" value="1"><input type="number" class="num" id="n-ribt" min="0.8" max="3.2" step="0.1" value="1" aria-label="rib thickness mm"></div>
+      <p class="note" id="fabsum" style="margin:2px 0 12px"></p>
+      <div class="actions">
+        <button class="btn" id="stl">Export STL</button>
+        <button class="btn quiet" id="svg">Export SVG for CAD</button>
+      </div>
+    </div>
+    <p class="hint">Drag on the artwork to press the waves like wet canvas — strips bunch where you push and fan where you pull. Export renders at 1500 &times; 2100.</p>
+  </aside>
+</main>
+<footer><span class="name">Jasmine Narae Jung</span><a class="handle" href="https://www.instagram.com/jae3njae" target="_blank" rel="noopener">@jae3njae</a><span class="dot" aria-hidden="true">&middot;</span><a class="handle" href="mailto:jae3njae@gmail.com">jae3njae@gmail.com</a></footer>
+<script>
+(function(){
+  const cv = document.getElementById('art');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+
+  const PALS = {
+    sea:   { stops:['#c8d46a','#8bc06b','#4ba07c','#2e8c8a','#2c6fa3','#2d4f9e','#232c6e'], accents:['#f4ecc8','#e8c766','#d98a4e'], bg:'#1d2547' },
+    magic: { stops:['#f2d38a','#eab266','#e0855c','#c65f6a','#94517f','#5c3f77','#2f2d5c'], accents:['#fbf0d0','#f5e08a','#7fd0c9'], bg:'#282247' },
+    kelp:  { stops:['#e8e3c0','#c3c98a','#a9b56a','#79a05c','#4d7d4e','#2f5e46','#15332c'], accents:['#f6f1d8','#e5c76e','#c97c4a'], bg:'#122922' },
+    bone:  { stops:['#f5f1e6','#e5dfd0','#d8d2c2','#bfb9a9','#a8a193','#6b665c','#26231e'], accents:['#ffffff','#d9a441','#8c4a3a'], bg:'#1c1a16' }
+  };
+
+  const S = { lines:110, weight:2.5, accents:9, swell:58, wavelen:52, bands:4, turb:34, drift:45, pal:'sea', seed:7 };
+  let warps = [];
+  const STEPS = 190, dx = W/STEPS;
+
+  function rng(seed){ let s = seed>>>0 || 1; return () => (s = (s*1664525 + 1013904223)>>>0) / 4294967296; }
+  function hex2rgb(h){ return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; }
+  function grad(stops, t){
+    t = Math.min(1, Math.max(0, t));
+    const n = stops.length - 1, i = Math.min(n-1, Math.floor(t*n)), f = t*n - i;
+    const a = hex2rgb(stops[i]), b = hex2rgb(stops[i+1]);
+    return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f].map(Math.round);
+  }
+
+  function computeLines(){
+    const pal = PALS[S.pal];
+    const rand = rng(S.seed * 7919);
+    const N = S.lines;
+    const amp = (S.swell/100) * (H/N) * 9 + 4;
+    const lam = 120 + (S.wavelen/100) * 900;
+    const turb = S.turb/100, drift = (S.drift/100) * 5.2;
+    const p1 = rand()*6.28, p2 = rand()*6.28, p3 = rand()*6.28;
+    const pad = amp + 14;
+    const accentEvery = S.accents ? Math.max(3, Math.round(N / S.accents)) : 0;
+    const accOff = Math.floor(rand()*7);
+    const out = [];
+    let prev = null;
+    for (let i = 0; i < N; i++){
+      const t = i/(N-1);
+      const env = Math.sin(Math.PI * (t * S.bands + 0.18));
+      const jitter = (rand()-0.5) * amp * 0.22;
+      const ys = new Float32Array(STEPS+1);
+      for (let k = 0; k <= STEPS; k++){
+        const x = k*dx;
+        let y = pad + t * (H - pad*2);
+        y += env * amp * Math.sin(6.2832*x/lam + p1 + t*drift*6.2832);
+        y += env * amp * turb * 0.85 * Math.sin(6.2832*x/(lam*0.37) + p2 - t*drift*10.4);
+        y += amp * turb * 0.4 * Math.sin(6.2832*x/(lam*2.6) + p3 + t*2.1);
+        y += jitter;
+        for (const w of warps){
+          const dxx = (x - w.x), dyy = (pad + t*(H-pad*2) - w.y);
+          y += w.s * Math.exp(-(dxx*dxx + dyy*dyy) / (w.r*w.r));
+        }
+        if (prev && y < prev[k] + 1.1) y = prev[k] + 1.1;
+        ys[k] = y;
+      }
+      let col, lw = S.weight;
+      const isAcc = accentEvery && (i + accOff) % accentEvery === 0 && i > 1 && i < N-2;
+      if (isAcc){
+        col = hex2rgb(pal.accents[Math.floor(rand()*pal.accents.length)]);
+        lw = S.weight * 0.9;
+      } else {
+        col = grad(pal.stops, t + (rand()-0.5)*0.05);
+      }
+      out.push({ ys, lw, col });
+      prev = ys;
+    }
+    return { lines: out, bg: pal.bg };
+  }
+
+  function render(c = ctx, sc = 1){
+    c.save();
+    c.setTransform(sc, 0, 0, sc, 0, 0);
+    const { lines, bg } = computeLines();
+    c.fillStyle = bg;
+    c.fillRect(0, 0, W, H);
+    c.lineJoin = 'round';
+    for (const L of lines){
+      c.beginPath();
+      c.moveTo(-4, L.ys[0]);
+      for (let k = 1; k <= STEPS; k++) c.lineTo(k*dx, L.ys[k]);
+      c.strokeStyle = 'rgba(8,10,18,0.55)';
+      c.lineWidth = L.lw + 1.6;
+      c.stroke();
+      c.beginPath();
+      c.moveTo(-4, L.ys[0] - L.lw*0.45);
+      for (let k = 1; k <= STEPS; k++) c.lineTo(k*dx, L.ys[k] - L.lw*0.45);
+      c.strokeStyle = 'rgb(' + L.col[0] + ',' + L.col[1] + ',' + L.col[2] + ')';
+      c.lineWidth = L.lw;
+      c.stroke();
+    }
+    c.restore();
+  }
+
+  let raf = 0;
+  function queue(){ if (!raf) raf = requestAnimationFrame(() => { raf = 0; render(); }); }
+
+  const bind = (id, key) => {
+    const el = document.getElementById(id), num = document.getElementById('n-'+id);
+    const lo = +el.min, hi = +el.max;
+    el.addEventListener('input', () => { S[key] = +el.value; num.value = el.value; queue(); if (key === 'lines') fabinfo(); });
+    const commit = () => {
+      let v = parseFloat(num.value);
+      if (isNaN(v)) { num.value = S[key]; return; }
+      v = Math.min(hi, Math.max(lo, v));
+      S[key] = v; el.value = v; num.value = v; queue(); if (key === 'lines') fabinfo();
+    };
+    num.addEventListener('change', commit);
+    num.addEventListener('keydown', e => { if (e.key === 'Enter') { commit(); num.blur(); } });
+  };
+  bind('lines','lines'); bind('weight','weight'); bind('accents','accents');
+  bind('swell','swell'); bind('wavelen','wavelen'); bind('bands','bands');
+  bind('turb','turb'); bind('drift','drift');
+
+  document.querySelectorAll('.swatch').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.swatch').forEach(x => x.setAttribute('aria-pressed','false'));
+      b.setAttribute('aria-pressed','true');
+      S.pal = b.dataset.pal; queue();
+    });
+  });
+
+  document.getElementById('shuffle').addEventListener('click', () => { S.seed = Math.floor(Math.random()*99999); queue(); });
+  document.getElementById('smooth').addEventListener('click', () => { warps = []; queue(); });
+
+  function download(name, blob){
+    const a = document.createElement('a');
+    a.download = name;
+    a.href = URL.createObjectURL(blob);
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+
+  document.getElementById('save').addEventListener('click', () => {
+    const out = document.createElement('canvas');
+    out.width = 1500; out.height = 2100;
+    render(out.getContext('2d'), 1.5);
+    out.toBlob(b => download('waven-5x7.png', b), 'image/png');
+  });
+
+  const MM = 0.127;
+  const PLATE_W = 127, PLATE_H = 177.8, EMBED = 1;
+  const F = { ribh: 25.4, baseh: 3, ribt: 1 };
+  const ribT = () => F.ribt;
+  const fabsum = document.getElementById('fabsum');
+  function fabinfo(){
+    const total = (F.baseh + F.ribh).toFixed(1);
+    const pitch = (PLATE_H / S.lines).toFixed(2);
+    fabsum.textContent = 'Total depth ' + total + ' mm \u00b7 avg rib pitch ' + pitch + ' mm at ' + S.lines + ' lines';
+    if (F.ribt > PLATE_H / S.lines) fabsum.textContent += ' \u2014 ribs will fuse in places';
+  }
+  const bindF = (id) => {
+    const el = document.getElementById(id), num = document.getElementById('n-'+id);
+    const lo = +el.min, hi = +el.max;
+    el.addEventListener('input', () => { F[id] = +el.value; num.value = el.value; fabinfo(); });
+    const commit = () => {
+      let v = parseFloat(num.value);
+      if (isNaN(v)) { num.value = F[id]; return; }
+      v = Math.min(hi, Math.max(lo, v));
+      F[id] = v; el.value = v; num.value = v; fabinfo();
+    };
+    num.addEventListener('change', commit);
+    num.addEventListener('keydown', e => { if (e.key === 'Enter') { commit(); num.blur(); } });
+  };
+  bindF('ribh'); bindF('baseh'); bindF('ribt');
+  fabinfo();
+
+  function ribbons(step){
+    const { lines } = computeLines();
+    const h = ribT()/2;
+    const out = [];
+    for (const L of lines){
+      const pts = [];
+      for (let k = 0; k <= STEPS; k += step) pts.push([k*dx*MM, (H - L.ys[k])*MM]);
+      if ((STEPS % step) !== 0) pts.push([W*MM, (H - L.ys[STEPS])*MM]);
+      const Lp = [], Rp = [];
+      for (let k = 0; k < pts.length; k++){
+        const a = pts[Math.max(0,k-1)], b = pts[Math.min(pts.length-1,k+1)];
+        let tx = b[0]-a[0], ty = b[1]-a[1];
+        const m = Math.hypot(tx,ty) || 1; tx/=m; ty/=m;
+        const cl = v => [Math.min(PLATE_W, Math.max(0, v[0])), Math.min(PLATE_H, Math.max(0, v[1]))];
+        Lp.push(cl([pts[k][0]-ty*h, pts[k][1]+tx*h]));
+        Rp.push(cl([pts[k][0]+ty*h, pts[k][1]-tx*h]));
+      }
+      out.push({ L:Lp, R:Rp });
+    }
+    return out;
+  }
+
+  function exportSTL(){
+    const ribs = ribbons(2);
+    const tris = [];
+    const BASE = F.baseh, z0 = Math.max(0.2, BASE - EMBED), z1 = BASE + F.ribh;
+    const quad = (a,b,c,d) => { tris.push([a,b,c],[a,c,d]); };
+    quad([0,0,0],[PLATE_W,0,0],[PLATE_W,PLATE_H,0],[0,PLATE_H,0]);
+    quad([0,0,BASE],[0,PLATE_H,BASE],[PLATE_W,PLATE_H,BASE],[PLATE_W,0,BASE]);
+    quad([0,0,0],[0,PLATE_H,0],[0,PLATE_H,BASE],[0,0,BASE]);
+    quad([PLATE_W,0,0],[PLATE_W,0,BASE],[PLATE_W,PLATE_H,BASE],[PLATE_W,PLATE_H,0]);
+    quad([0,0,0],[0,0,BASE],[PLATE_W,0,BASE],[PLATE_W,0,0]);
+    quad([0,PLATE_H,0],[PLATE_W,PLATE_H,0],[PLATE_W,PLATE_H,BASE],[0,PLATE_H,BASE]);
+    for (const r of ribs){
+      const n = r.L.length;
+      for (let k = 0; k < n-1; k++){
+        const L0=r.L[k], L1=r.L[k+1], R0=r.R[k], R1=r.R[k+1];
+        quad([L0[0],L0[1],z0],[L1[0],L1[1],z0],[L1[0],L1[1],z1],[L0[0],L0[1],z1]);
+        quad([R0[0],R0[1],z0],[R0[0],R0[1],z1],[R1[0],R1[1],z1],[R1[0],R1[1],z0]);
+        quad([L0[0],L0[1],z1],[L1[0],L1[1],z1],[R1[0],R1[1],z1],[R0[0],R0[1],z1]);
+        quad([L0[0],L0[1],z0],[R0[0],R0[1],z0],[R1[0],R1[1],z0],[L1[0],L1[1],z0]);
+      }
+      const La=r.L[0], Ra=r.R[0], Lb=r.L[n-1], Rb=r.R[n-1];
+      quad([La[0],La[1],z0],[La[0],La[1],z1],[Ra[0],Ra[1],z1],[Ra[0],Ra[1],z0]);
+      quad([Lb[0],Lb[1],z0],[Rb[0],Rb[1],z0],[Rb[0],Rb[1],z1],[Lb[0],Lb[1],z1]);
+    }
+    const buf = new ArrayBuffer(84 + tris.length*50);
+    const dv = new DataView(buf);
+    dv.setUint32(80, tris.length, true);
+    let o = 84;
+    for (const t of tris){
+      const ux=t[1][0]-t[0][0], uy=t[1][1]-t[0][1], uz=t[1][2]-t[0][2];
+      const vx=t[2][0]-t[0][0], vy=t[2][1]-t[0][1], vz=t[2][2]-t[0][2];
+      let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+      const m=Math.hypot(nx,ny,nz)||1; nx/=m; ny/=m; nz/=m;
+      dv.setFloat32(o,nx,true); dv.setFloat32(o+4,ny,true); dv.setFloat32(o+8,nz,true); o+=12;
+      for (const p of t){ dv.setFloat32(o,p[0],true); dv.setFloat32(o+4,p[1],true); dv.setFloat32(o+8,p[2],true); o+=12; }
+      dv.setUint16(o,0,true); o+=2;
+    }
+    download('waven-5x7in.stl', new Blob([buf], {type:'model/stl'}));
+  }
+
+  function exportSVG(){
+    const ribs = ribbons(1);
+    const fmt = v => v.toFixed(3);
+    let paths = '';
+    for (const r of ribs){
+      let d = 'M' + fmt(r.L[0][0]) + ' ' + fmt(PLATE_H - r.L[0][1]);
+      for (let k=1;k<r.L.length;k++) d += ' L' + fmt(r.L[k][0]) + ' ' + fmt(PLATE_H - r.L[k][1]);
+      for (let k=r.R.length-1;k>=0;k--) d += ' L' + fmt(r.R[k][0]) + ' ' + fmt(PLATE_H - r.R[k][1]);
+      d += ' Z';
+      paths += '<path d="' + d + '" fill="#000"/>\n';
+    }
+    const svg = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="127mm" height="177.8mm" viewBox="0 0 127 177.8">\n' +
+      '<rect x="0" y="0" width="127" height="177.8" fill="none" stroke="#f00" stroke-width="0.2"/>\n' +
+      paths + '</svg>';
+    download('waven-5x7in-outlines.svg', new Blob([svg], {type:'image/svg+xml'}));
+  }
+
+  document.getElementById('stl').addEventListener('click', exportSTL);
+  document.getElementById('svg').addEventListener('click', exportSVG);
+
+  let sculpting = false, last = null;
+  function pos(e){
+    const r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
+  }
+  cv.addEventListener('pointerdown', e => {
+    sculpting = true; last = pos(e);
+    cv.classList.add('sculpting');
+    cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!sculpting) return;
+    const p = pos(e);
+    const dy = p.y - last.y;
+    if (Math.abs(dy) > 0.4){
+      warps.push({ x: p.x, y: last.y, s: Math.max(-46, Math.min(46, dy * 1.35)), r: 150 });
+      if (warps.length > 140) warps.splice(0, warps.length - 140);
+      last = p; queue();
+    } else { last = p; }
+  });
+  const end = () => { sculpting = false; cv.classList.remove('sculpting'); };
+  cv.addEventListener('pointerup', end);
+  cv.addEventListener('pointercancel', end);
+
+  render();
+})();
+</script>
+</body>
+</html>
